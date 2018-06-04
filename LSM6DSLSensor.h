@@ -269,8 +269,13 @@ class LSM6DSLSensor : public MotionSensor, public GyroSensor
             return 0;
         }
         if (_dev_i2c) {
-            _dev_i2c->write(_address, (char *)&RegisterAddr, 1, 1);
-            return _dev_i2c->read(_address, (char *)pBuffer, NumByteToRead);
+            tmp_regs[0] = RegisterAddr;
+            _dev_i2c->write(_address, (char *)tmp_regs, 1, 1);
+            int status = _dev_i2c->read(_address, (char *)&tmp_regs[1], NumByteToRead);
+            if(!status) {
+                pBuffer[0] = tmp_regs[1];
+            }
+            return status;
         }
         return 1;
     }
@@ -295,8 +300,9 @@ class LSM6DSLSensor : public MotionSensor, public GyroSensor
             return data;
         }
         if (_dev_i2c) {
-            char data[2] = {RegisterAddr, pBuffer[0]};
-            return (uint8_t) _dev_i2c->write(_address, data, 2);
+            tmp_regs[0] = RegisterAddr;
+            tmp_regs[1] = pBuffer[0];
+            return (uint8_t) _dev_i2c->write(_address, (char *)tmp_regs, 2);
         }
 
         return 1;
@@ -323,6 +329,8 @@ class LSM6DSLSensor : public MotionSensor, public GyroSensor
     float _x_last_odr;
     uint8_t _g_is_enabled;
     float _g_last_odr;
+
+    uint8_t tmp_regs[2];
 };
 
 #ifdef __cplusplus
